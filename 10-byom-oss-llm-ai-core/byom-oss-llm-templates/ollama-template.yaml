@@ -14,7 +14,7 @@ spec:
   inputs:
     parameters:
       - name: modelName # placeholder name
-        default: "phi3:14b" 
+        default: "exaone-deep:2.4b"
         type: string # required for every parameters
         description: "Model Name to be used for inference with SAP Generative AI Hub SDK"
       - name: resourcePlan
@@ -33,12 +33,12 @@ spec:
     spec: |
       predictor:
         imagePullSecrets:
-        - name: <YOUR_DOCKER_SECRET>
+        - name: docker-secret
         minReplicas: 1
         maxReplicas: 1
         containers:
         - name: kserve-container
-          image: docker.io/<YOUR_DOCKER_USER>/ollama:ai-core
+          image: sbda.int.repositories.cloud.sap/ems/ollama:ai-core
           ports:
             - containerPort: 8080
               protocol: TCP

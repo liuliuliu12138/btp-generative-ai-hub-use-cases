@@ -7,7 +7,8 @@ RUN apt-get update && \
     apt-get install -y \
     ca-certificates \
     nginx \
-    curl && \
+    curl \
+    zstd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
