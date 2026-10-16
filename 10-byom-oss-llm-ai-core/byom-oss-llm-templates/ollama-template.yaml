@@ -38,7 +38,7 @@ spec:
         maxReplicas: 1
         containers:
         - name: kserve-container
-          image: sbda.int.repositories.cloud.sap/ems/ollama:ai-core
+          image: sbda.int.repositories.cloud.sap/ems/ollama@sha256:325e5fc53f51dd2f701299abd4614f53a21e269f26709492dab928a23d6e18b0
           ports:
             - containerPort: 8080
               protocol: TCP
