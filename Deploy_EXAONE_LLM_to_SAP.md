@@ -11,17 +11,21 @@
 | 项 | 值 |
 |---|---|
 | 目标模型 | `exaone-deep:2.4b`（Ollama 库，1.6GB，Q4_K_M，32K ctx）—— EXAONE Deep 最小 |
-| **Docker 镜像（部署用）** | **`sbda.int.repositories.cloud.sap/ems/ollama:ai-core`**（内网 SAP registry，digest `sha256:0552c7f5a3b1…`） |
-| registry | `sbda.int.repositories.cloud.sap`，namespace `ems`（Docker Hub 被公司网络代理挡，改用此内网 registry） |
+| **Docker 镜像（部署用）** | **`entlms.common.repositories.cloud.sap/ems/ollama:ai-core`**（digest `sha256:0552c7f5a3b1…`） |
+| registry（当前） | `entlms.common.repositories.cloud.sap`，namespace `ems` |
+| ~~registry（弃用）~~ | ~~`sbda.int.repositories.cloud.sap`~~（AI Core runtime 无法访问，已废弃） |
 | ~~Docker Hub user~~ | ~~`maggieliu714005548`~~（弃用，公司网络 push 不通） |
-| GitHub fork | `https://github.com/liuliuliu12138/btp-generative-ai-hub-use-cases.git`（本地 clone 的 origin） |
+| GitHub fork | `https://github.com/liuliuliu12138/btp-generative-ai-hub-use-cases.git` |
 | 本地仓库根 | `/Users/I326998/git/btp-generative-ai-hub-use-cases` |
 | 教程工作目录 | `10-byom-oss-llm-ai-core/` |
 | Dockerfile | `10-byom-oss-llm-ai-core/byom-oss-llm-code/ollama/Dockerfile` |
 | serving 模板 | `10-byom-oss-llm-ai-core/byom-oss-llm-templates/ollama-template.yaml` |
 | config 模板 | `10-byom-oss-llm-ai-core/byom-oss-llm-code/config.template.json` |
 | resource plan | `infer.s`（带 GPU，2.4B 够用） |
-| resource_group | `oss-llm`（待建，可按 config 调整） |
+| resource_group | `oss-llm` |
+| **deployment_url** | `https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/d241483ed1f30659` |
+| deployment_id（当前） | `d241483ed1f30659`（RUNNING ✅） |
+| configuration_id（当前） | `a406553d-a87a-473e-a100-b3dea96a6621` |
 
 ---
 
@@ -29,11 +33,11 @@
 
 | 项 | 状态 | 备注 |
 |---|---|---|
-| ① SAP AI Core（Standard/Extended）+ service key | ✅ 用户已有 | 到 Step 4 写进 config.json |
-| ② Docker Hub 账号 + access token | ✅ 账号 `maggieliu714005548`，token 用户自留 | login 由用户在本地终端执行 |
-| ③ GitHub 可写 fork | ✅ `liuliuliu12138/...` | 模板改完需 push 到此 fork |
+| ① SAP AI Core（Standard/Extended）+ service key | ✅ | 已写入 config.json |
+| ② 内网 registry 账号 | ✅ | `entlms.common.repositories.cloud.sap`，凭证用户自留 |
+| ③ GitHub 可写 fork | ✅ `liuliuliu12138/...` | 模板已 push |
 | ④ 执行方式 | ✅ 由 Claude 用终端命令/脚本代跑 | notebook cell → CLI/python |
-| 本地 Docker | ✅ 已安装 | daemon 待确认 |
+| 本地 Docker | ✅ 已安装 | daemon 需手动 `open -a Docker` 启动 |
 
 ---
 
@@ -43,13 +47,16 @@
 |---|---|---|---|
 | 0 | 前置条件核对 | — | ✅ 完成 |
 | 1 | 准备 Dockerfile | 无需改（镜像与模型无关） | ✅ 完成 |
-| 2 | 构建并推送 Docker 镜像 | 推到内网 SAP registry（Docker Hub 被挡） | ✅ 完成 |
-| 3 | 改 ollama-template.yaml | modelName→exaone-deep:2.4b；image→内网 registry；secret 名→docker-secret | ✅ 完成（文件已改，待 push GitHub） |
-| 4 | 准备 config.json | 保留全部 configurations，仅 ollama 项改 EXAONE | ✅ 完成（机密已填、JSON 合法） |
-| 5 | 00-init-config：onboard repo+建 app+同步 scenario+建 configuration | — | ⬜ 未开始 |
-| 6 | 01-deployment：创建 deployment 等 RUNNING | — | ⬜ 未开始 |
-| 7 | 拉取 exaone-deep:2.4b 并推理 | 模型名用 EXAONE | ⬜ 未开始 |
-| 8（可选） | 接 Open WebUI | PoC 跳过 | ⬜ 未开始 |
+| 2 | 构建并推送 Docker 镜像 | 推到内网 registry（Docker Hub 被挡） | ✅ 完成 |
+| 3 | 改 ollama-template.yaml | modelName→exaone-deep:2.4b；image→entlms registry；secret→docker-secret | ✅ 完成 |
+| 4 | 准备 config.json | 保留全部 configurations，ollama 项改 EXAONE | ✅ 完成 |
+| 5 | 00-init-config：onboard repo+建 app+同步 scenario+建 configuration | — | ✅ 完成 |
+| 6 | 创建 deployment，等 RUNNING | 换 entlms registry 后成功 RUNNING | ✅ 完成 |
+| 7a | 获取 deployment URL | — | ✅ 完成 |
+| 7b | 拉取 exaone-deep:2.4b 到容器 | 模型名 exaone-deep:2.4b | ✅ 完成 |
+| 7c | 直接 API 推理测试 | — | ⬜ 待用户手动执行 |
+| 7d | GenAI Hub SDK 推理测试 | — | ⬜ 未开始 |
+| 8（可选） | 接 Open WebUI | PoC 跳过 | ⬜ 跳过 |
 
 ---
 
@@ -59,63 +66,109 @@
 - 结果：AI Core service key 在手；Docker Hub 账号已建（`maggieliu714005548`）；GitHub fork 已就位；执行方式=Claude 代跑。
 
 ### Step 1 — 准备 Dockerfile ✅
-- 做了什么：确认 `ollama/Dockerfile` 就位。其做三件适配：装 Ollama+nginx；nginx 把 `/api/*` 反代为 `/v1/api/*`（AI Core 要求端点带 /v1 前缀），`/v1/chat/*` 原样；为 nobody 用户建 `/nonexistent/.ollama`，EXPOSE 8080，CMD 同时起 nginx + `ollama serve`。
+- 做了什么：确认 `ollama/Dockerfile` 就位。其做三件适配：装 Ollama+nginx；nginx 把 `/v1/api/*` 反代到 Ollama 的 `/api/*`（AI Core 要求端点带 /v1 前缀），`/v1/chat/completions` 原样转发；为 nobody 用户建 `/nonexistent/.ollama`，EXPOSE 8080，CMD 同时起 nginx + `ollama serve`。
 - EXAONE 改动：**无**。镜像与模型解耦，模型运行时拉取。
-- 结果：文件存在且与教程一致，无需改动。验收通过。
+- **坑①（已修复）**：首次 build 失败，报 `This version requires zstd for extraction`。Ollama 新版安装脚本改用 zstd，教程 Dockerfile 未装。修复：apt 安装列表加 `zstd`。
+- 结果：✅ 文件就位，验收通过。
 
-### Step 2 — 构建并推送 Docker 镜像 ⏳
-- 计划命令（显式指定 Dockerfile 路径与 context）：
+### Step 2 — 构建并推送 Docker 镜像 ✅
+- build 命令：
   ```sh
   docker build --platform=linux/amd64 \
-    -f /Users/I326998/git/btp-generative-ai-hub-use-cases/10-byom-oss-llm-ai-core/byom-oss-llm-code/ollama/Dockerfile \
+    -f .../ollama/Dockerfile \
     -t docker.io/maggieliu714005548/ollama:ai-core \
-    /Users/I326998/git/btp-generative-ai-hub-use-cases/10-byom-oss-llm-ai-core/byom-oss-llm-code/ollama
-  docker push docker.io/maggieliu714005548/ollama:ai-core
+    .../ollama
   ```
-- token 处理：`docker login -u maggieliu714005548` 由用户本地终端执行，凭证缓存，token 不进 Claude 工具调用。
-- 验收标准：build 末尾 `naming to docker.io/maggieliu714005548/ollama:ai-core ... DONE`；push 给出 `ai-core: digest: sha256:...`；Docker Hub tags 页可见 `ai-core`。
-- 环境：Docker Desktop 需手动 `open -a Docker` 启动；本机架构 aarch64(Apple Silicon)，故必须 `--platform=linux/amd64` 交叉构建。
-- **坑①（已修复）**：首次 build 在第 3 步 `curl ollama/install.sh | sh` 失败，报 `This version requires zstd for extraction`。Ollama 新版安装脚本改用 zstd 压缩，教程 Dockerfile 未装 zstd。
-  - 修复：Dockerfile apt 安装列表加 `zstd`（已改，用户确认）。此为环境版本漂移适配，与 EXAONE 无关。
-- **坑②（下载慢，根因澄清）**：build 第 3 步下载的是 **Ollama 二进制 `ollama-linux-amd64.tar.zst`，来自 ollama.com CDN（curl 下载），不是 Docker 镜像**。本机已配 Docker 国内镜像(daocloud/azk8s/163)，但那只加速 `docker pull` 基础镜像，对 ollama.com 的 curl 下载无效，故慢。
-  - 本地已装的 ollama 是 macOS/arm64，**无法复用**到 linux/amd64 镜像。
-  - 备选**方案 B（下次从头做可直接用，更快）**：Dockerfile 改为 `FROM ollama/ollama:latest`（走国内镜像快）+ 装 nginx + `ENTRYPOINT []` + `CMD service nginx start && /bin/ollama serve`，绕开 ollama.com。本次因 build 已过 65%，选择等待，未切 B。
-- 结果：_（待填——等待 build 跑完）_
+- **坑②（下载慢）**：build 时下载 Ollama 二进制来自 ollama.com CDN，国内镜像加速对其无效。
+- **坑③（push 失败）**：公司网络代理（squid:3128）对 Docker Hub push 不稳，`use of closed network connection`，无法修复。
+- **解法**：改推内网 registry `sbda.int.repositories.cloud.sap/ems/ollama:ai-core`，一次成功。digest `sha256:0552c7f5a3b1…`。
 
-### Step 2 关键转折 — push 目标从 Docker Hub 改为内网 SAP registry ✅
-- **坑③（push 失败，根因=公司网络代理）**：原计划推 Docker Hub（`registry-1.docker.io`），但公司网络的 HTTP 代理（squid:3128）对 Docker Hub push 连接不稳/间歇性掐断，表现为 `use of closed network connection` 和对 blob 的 HEAD 请求 `EOF`（连空 blob 都失败，证明不是层大小问题，是代理到 Docker Hub 的链路问题）。
-  - 期间副作用：手动 quit/relaunch Docker 一度把 Docker Desktop VM 后端弄挂（`dialing 192.168.65.7:2376 no route to host` → 所有 docker API 500），后台重启任务最终自愈，镜像未丢（存于 VM 持久磁盘）。
-  - 无效尝试：`max-concurrent-uploads:1`、多次重试、关代理（关代理后反而连不上 Docker Hub，证明该网络下 push Docker Hub 必须经代理，而代理又不稳）。
-- **解法**：用户改用公司内网镜像仓库 `sbda.int.repositories.cloud.sap`，`docker login` 后：
+### Step 2 追加 — 镜像迁移到 entlms registry ✅
+- **根因**：`sbda.int.repositories.cloud.sap` 是内部开发用 registry，AI Core runtime 网络无法访问，导致 deployment 长时间 PENDING。
+- 同事建议换用 `entlms.common.repositories.cloud.sap`（AI Core 可访问的 registry）。
+- 操作：
   ```sh
-  docker tag docker.io/maggieliu714005548/ollama:ai-core sbda.int.repositories.cloud.sap/ems/ollama:ai-core
-  docker push sbda.int.repositories.cloud.sap/ems/ollama:ai-core
+  docker login entlms.common.repositories.cloud.sap   # 用户操作
+  docker tag sbda.int.repositories.cloud.sap/ems/ollama:ai-core \
+             entlms.common.repositories.cloud.sap/ems/ollama:ai-core
+  docker push entlms.common.repositories.cloud.sap/ems/ollama:ai-core
   ```
-  一次成功。命名规则：`<registry>/<namespace=ems>/<repository=ollama>:<tag=ai-core>`。
-- **结果**：✅ push 成功，镜像 `sbda.int.repositories.cloud.sap/ems/ollama:ai-core`，digest `sha256:0552c7f5a3b197d45a23824ce22a607f53b4ccb5b4457b9c0d8d4cb42cb89ee9`。
-- **对后续步骤的影响**：Step 3 serving 模板的 `image:` 要改成内网 registry 地址；docker secret 要指向 `sbda.int.repositories.cloud.sap`（含对应凭证），而非 Docker Hub。
+- 结果：✅ push 成功，digest `sha256:0552c7f5a3b197d45a23824ce22a607f53b4ccb5b4457b9c0d8d4cb42cb89ee9`（镜像内容不变，只换地址）。
+
+### Step 2 — 本地验证镜像可用性 ✅
+- 历史容器记录：无（首次跑）。
+- 本地运行验证（`--platform linux/amd64`，模拟 AI Core 环境）：
+  ```sh
+  docker run --rm -d --platform linux/amd64 -p 8080:8080 --name ollama-test \
+    entlms.common.repositories.cloud.sap/ems/ollama:ai-core
+  docker exec ollama-test ps aux | grep -E "nginx|ollama"   # 两个进程都在 ✅
+  curl -s http://localhost:8080/v1/api/tags                  # {"models":[]} ✅
+  docker stop ollama-test
+  ```
+- 结论：镜像本身无问题，nginx+ollama 启动正常，端点响应正常。
 
 ### Step 3 — 改 serving 模板 ollama-template.yaml ✅
-- 文件：`10-byom-oss-llm-ai-core/byom-oss-llm-templates/ollama-template.yaml`
-- 三处改动（已完成，无遗留占位符）：
-  - `modelName` 默认 `"phi3:14b"` → `"exaone-deep:2.4b"`（EXAONE Deep 最小模型）
-  - `imagePullSecrets.name` `<YOUR_DOCKER_SECRET>` → `docker-secret`
-  - `image` `docker.io/<YOUR_DOCKER_USER>/ollama:ai-core` → `sbda.int.repositories.cloud.sap/ems/ollama:ai-core`
-  - `resourcePlan` 保持 `infer.s`（带 GPU，2.4B 够用）
-- 概念澄清（docker secret）：name 只是引用；值 = `.dockerconfigjson`（registry 主机 + username + token），Step 5 跑 00-init-config 时从 config.json 读入并**存进 AI Core**，部署时按名在 AI Core 内部查值，不再读本地 config.json。
-- 待办：改好的模板需 push 到 GitHub fork（放在 Step 5 之前），且需确认公司网络能 push github.com。
-- **结果**：✅ 文件已改并校验，YAML 合法、无 `<YOUR_*>`/`phi3` 残留。
+- 改动记录（两轮）：
+  - 第一轮：`modelName` → `exaone-deep:2.4b`；`imagePullSecrets.name` → `docker-secret`；`image` → `sbda.int.repositories.cloud.sap/ems/ollama:ai-core`
+  - 第二轮（registry 迁移后）：`image` → `entlms.common.repositories.cloud.sap/ems/ollama:ai-core`
+- 两轮均已 commit + push 到 GitHub fork。
+- **坑⑤（digest 引用不兼容）**：曾尝试用 `image: ..@sha256:<digest>` 钉死镜像 → AI Core 报 `Runtime Adapter Exception: Configuration invalid`。结论：AI Core runtime adapter 不接受 digest 格式镜像引用，必须用 tag 格式。
 
-### Step 4 — 准备 config.json ⏳（待用户填机密）
-- 文件：`10-byom-oss-llm-ai-core/byom-oss-llm-code/config.json`（由 config.template.json 复制生成）
-- 安全：已确认被 `.gitignore` 忽略（`10-byom-oss-llm-ai-core/.gitignore` 第 3 行 `byom-oss-llm-code/config.json`）。**含机密，勿提交。**
-- 已填非机密：`name=byom-open-source-llms`、`resource_group=oss-llm`、docker_secret auths host=`sbda.int.repositories.cloud.sap`、`git_repo.repo_url`=fork、`git_repo.user=liuliuliu12138`、`path_in_repo` 不变；ollama 配置 `name=ollama-exaone-deep-2-4b`、`modelName=exaone-deep:2.4b`。保留全部 6 个 configurations（用户要求，备以后用）。
-- JSON 校验：✅ 合法。
-- **待用户填 3 组机密**：① `ai_core_service_key`（clientid/clientsecret/url/identityzone/identityzoneid/appname/AI_API_URL）；② docker_secret 的 `username`+`password`（sbda 内网 registry 拉取凭证）；③ `git_repo.access_token`（GitHub PAT）。
-- 结果：_（待用户填完机密后，Step 5 运行 00-init-config 验证）_
+### Step 4 — 准备 config.json ✅
+- 文件被 `.gitignore` 忽略，含机密，勿提交。
+- 经过两轮更新：初始填 sbda registry 凭证，迁移后更新为 entlms registry 凭证。
+- 关键非机密字段：`name=byom-llm-exaone`、`resource_group=oss-llm`、`modelName=exaone-deep:2.4b`。
+
+### Step 5 — 00-init-config ✅
+- 脚本：`byom-oss-llm-code/run_init_config.py`
+- **坑④（撞名）**：`name=byom-open-source-llms` 在共享租户已被占用 → 改 `name=byom-llm-exaone` 解决。
+- 结果：token ✅；resource group `oss-llm` ✅；docker-secret ✅；仓库 onboard ✅；application `byom-llm-exaone` ✅；sync=Synced/health=Healthy ✅；6 个 configuration 全部创建 ✅。
+
+### Step 6 — 创建 deployment → RUNNING ✅
+- **坑⑥（registry 不可达）**：前两个 deployment（`d973f4cbbda147d0`、`d6436cceff7a75bf`）均长时间 PENDING，无日志无事件。根因：`sbda.int.repositories.cloud.sap` AI Core runtime 无法访问。
+- **解法**：迁移到 `entlms.common.repositories.cloud.sap` 后，同步重建 docker-secret + resync + 新 deployment。
+  - 脚本：`byom-oss-llm-code/recreate_docker_secret.py`（重建 secret）、`byom-oss-llm-code/resync_and_new_deployment.py`（resync + 新 deployment）
+- **当前 deployment**：`d241483ed1f30659`，configuration `a406553d-a87a-473e-a100-b3dea96a6621`，status=**RUNNING** ✅
+- deployment_url：`https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/d241483ed1f30659`
+
+### Step 7a — 获取 deployment URL ✅
+- 用户提供：`https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/d241483ed1f30659`
+- 已写入 `ollama/env.json`。
+
+### Step 7b — 拉取模型到容器 ✅
+- 脚本：`byom-oss-llm-code/pull_model.py`
+- 调用：`POST {deployment_url}/v1/api/pull`，body `{"name": "exaone-deep:2.4b"}`，需 Bearer token + `AI-Resource-Group: oss-llm` header。
+- token 获取：OAuth client credentials flow（`POST {sk.url}/oauth/token`）。
+- 结果：
+  ```
+  pulling manifest
+  pulling 1eefef7fedff: 100%  (1644918944 bytes，主模型权重)
+  pulling 37cddd3bd818: 100%  (tokenizer)
+  pulling 294fd63925d8: 100%  (config)
+  pulling db5a752e264f: 100%  (license)
+  pulling d43429850c63: 100%  (template)
+  verifying sha256 digest ✅
+  writing manifest ✅
+  success ✅
+  ```
+- `exaone-deep:2.4b` 已下载并写入容器，可推理。
+
+---
+
+## 坑汇总
+
+| # | 坑 | 根因 | 解法 |
+|---|---|---|---|
+| ① | Dockerfile build 失败：`requires zstd` | Ollama 新版安装脚本改用 zstd，教程未更新 | apt 加装 `zstd` |
+| ② | Build 慢 | Ollama 二进制从 ollama.com 下载，国内镜像加速无效 | 等待；或改用 `FROM ollama/ollama` 基础镜像 |
+| ③ | Docker Hub push 失败 | 公司代理 squid:3128 对 Docker Hub push 连接不稳 | 改推内网 registry |
+| ④ | AI Core onboard 409 撞名 | `byom-open-source-llms` 在共享租户已被占用 | 改 `name=byom-llm-exaone` |
+| ⑤ | digest 镜像引用报错 | AI Core runtime adapter 不接受 `image@sha256:` 格式 | 回退为 tag 引用 |
+| ⑥ | PENDING 无法 RUNNING | `sbda.int.repositories.cloud.sap` AI Core runtime 无法访问 | 迁移到 `entlms.common.repositories.cloud.sap` |
 
 ---
 
 ## 下一步 / 续作提示
-- 下次续作：从「步骤总表」里第一个非 ✅ 的步骤继续。
-- 需要用户提供/操作的：Step 2 的 `docker login`；Step 4 的 AI Core service key、Docker token、GitHub PAT 填入 `config.json`（该文件含机密，勿提交）。
+- **当前状态**：deployment RUNNING，模型 `exaone-deep:2.4b` 已拉取到容器。
+- **下一步**：Step 7c（直接 API 推理）→ Step 7d（GenAI Hub SDK 推理）。
+- Step 8（Open WebUI）PoC 阶段跳过。
